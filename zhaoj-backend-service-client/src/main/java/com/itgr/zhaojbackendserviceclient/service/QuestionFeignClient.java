@@ -1,7 +1,6 @@
 package com.itgr.zhaojbackendserviceclient.service;
 
 
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.itgr.zhaojbackendmodel.model.entity.Question;
 import com.itgr.zhaojbackendmodel.model.entity.QuestionSubmit;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -27,8 +26,6 @@ public interface QuestionFeignClient {
     @PostMapping("/question_submit/update")
     boolean updateQuestionSubmitById(@RequestBody QuestionSubmit questionSubmit);
 
-    @PostMapping("/question/update")
-    default boolean update(Wrapper<Question> updateWrapper) {
-        return update(updateWrapper);
-    }
+    @PostMapping("/question/updateAcceptedNum")
+    boolean updateAcceptedNum(@RequestBody long questionId);
 }

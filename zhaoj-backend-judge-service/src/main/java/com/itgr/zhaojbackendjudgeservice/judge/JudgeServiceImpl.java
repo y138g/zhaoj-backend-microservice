@@ -1,7 +1,6 @@
 package com.itgr.zhaojbackendjudgeservice.judge;
 
 import cn.hutool.json.JSONUtil;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.itgr.zhaojbackendcommon.common.ErrorCode;
 import com.itgr.zhaojbackendcommon.exception.BusinessException;
 import com.itgr.zhaojbackendjudgeservice.judge.codesandbox.CodeSandbox;
@@ -97,9 +96,7 @@ public class JudgeServiceImpl implements JudgeService {
         }
         // 更新题目通过数
         if (judgeInfo.getMessage().equals(JudgeInfoMessageEnum.ACCEPTED.getValue())) {
-            UpdateWrapper<Question> updateWrapper = new UpdateWrapper<>();
-            updateWrapper.eq("id", questionId).setSql("accepted = accepted + 1");
-            questionFeignClient.update(updateWrapper);
+            questionFeignClient.updateAcceptedNum(questionId);
         }
         return questionFeignClient.getQuestionSubmitById(questionId);
     }

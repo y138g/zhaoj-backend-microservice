@@ -1,5 +1,6 @@
 package com.itgr.zhaojbackendquestionservice.controller.inner;
 
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.itgr.zhaojbackendmodel.model.entity.Question;
 import com.itgr.zhaojbackendmodel.model.entity.QuestionSubmit;
 import com.itgr.zhaojbackendquestionservice.service.QuestionService;
@@ -58,4 +59,11 @@ public class QuestionInnerController implements QuestionFeignClient {
         return questionSubmitService.updateById(questionSubmit);
     }
 
+    @PostMapping("/question/updateAcceptedNum")
+    @Override
+    public boolean updateAcceptedNum(@RequestBody long questionId) {
+        UpdateWrapper<Question> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("id", questionId).setSql("accepted = accepted + 1");
+        return questionService.update(null,updateWrapper);
+    }
 }
