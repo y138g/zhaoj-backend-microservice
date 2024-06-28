@@ -1,0 +1,54 @@
+version: '3'
+services:
+  zhaoj-backend-gateway:
+    container_name: zhaoj-backend-gateway
+    build:
+      context: ./zhaoj-backend-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8101:8101"
+    networks:
+      - mynetwork
+
+  zhaoj-backend-user-service:
+    container_name: zhaoj-backend-user-service
+    build:
+      context: ./zhaoj-backend-user-service
+      dockerfile: Dockerfile
+    ports:
+      - "8102:8102"
+    networks:
+      - mynetwork
+    depends_on:
+      - zhaoj-backend-gateway
+
+  zhaoj-backend-question-service:
+    container_name: zhaoj-backend-question-service
+    build:
+      context: ./zhaoj-backend-question-service
+      dockerfile: Dockerfile
+    ports:
+      - "8103:8103"
+    networks:
+      - mynetwork
+    depends_on:
+      - zhaoj-backend-user-service
+      - zhaoj-backend-gateway
+
+  zhaoj-backend-judge-service:
+    container_name: zhaoj-backend-judge-service
+    build:
+      context: ./zhaoj-backend-judge-service
+      dockerfile: Dockerfile
+    ports:
+      - "8104:8104"
+    networks:
+      - mynetwork
+    depends_on:
+      - zhaoj-backend-user-service
+      - zhaoj-backend-question-service
+      - zhaoj-backend-gateway
+
+# 网络，不定义的话就是默认网络
+networks:
+  mynetwork:

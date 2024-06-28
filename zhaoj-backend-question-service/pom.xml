@@ -12,7 +12,7 @@
     <name>zhaoj-backend-question-service</name>
     <description>zhaoj-backend-question-service</description>
     <properties>
-        <java.version>11</java.version>
+        <java.version>8</java.version>
     </properties>
     <dependencies>
         <dependency>
