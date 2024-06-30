@@ -18,9 +18,8 @@ public class MyMessageConsumer {
     @Resource
     private JudgeService judgeService;
 
-    // 指定程序监听的消息队列和确认机制
     @SneakyThrows
-    @RabbitListener(queues = {"code_queue"}, ackMode = "MANUAL")
+    @RabbitListener(queues = {RabbitMqConfig.QUEUE_NAME}, ackMode = "MANUAL", autoStartup = "false")
     public void receiveMessage(String message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) {
         log.info("receiveMessage message = {}", message);
         long questionSubmitId = Long.parseLong(message);
@@ -31,5 +30,5 @@ public class MyMessageConsumer {
             channel.basicNack(deliveryTag, false, false);
         }
     }
-
 }
+

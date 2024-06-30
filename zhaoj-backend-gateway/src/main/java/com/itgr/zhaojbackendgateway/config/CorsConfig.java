@@ -18,8 +18,8 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedMethod("*");
         config.setAllowCredentials(true);
-        // todo 实际改为线上真实域名、本地域名
-        config.setAllowedOriginPatterns(Arrays.asList("*"));
+        //todo 修改为实际域名和IP
+        config.setAllowedOriginPatterns(Arrays.asList("http://nozhanan.com", "http://101.126.19.192"));
         config.addAllowedHeader("*");
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource(new PathPatternParser());
         source.registerCorsConfiguration("/**", config);

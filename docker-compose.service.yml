@@ -1,4 +1,3 @@
-version: '3'
 services:
   zhaoj-backend-gateway:
     container_name: zhaoj-backend-gateway

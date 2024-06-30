@@ -1,13 +1,17 @@
-# 生产环境配置文件
-# @author y138g
 spring:
-  # 数据库配置
+  application:
+    name: zhaoj-backend-user-service
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  session:
+    store-type: redis
+    timeout: 2592000
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://mysql:3306/zhaoj
     username: zhaoj
     password: root
-  # Redis 配置
   redis:
     database: 1
     host: redis
@@ -15,14 +19,30 @@ spring:
     timeout: 5000
   servlet:
     multipart:
-      # 大小限制
       max-file-size: 10MB
   cloud:
     nacos:
       discovery:
         server-addr: nacos:8848
-  rabbitmq:
-    host: rabbitmq
-    port: 5672
-    password: guest
-    username: guest
+server:
+  address: 0.0.0.0
+  port: 8102
+  servlet:
+    context-path: /api/user
+    session:
+      cookie:
+        max-age: 2592000
+        path: /api
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: false
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDelete
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+codesandbox:
+  type: remote
+knife4j:
+  enable: true

@@ -32,7 +32,7 @@ public class JudgeServiceImpl implements JudgeService {
     @Resource
     private JudgeManager judgeManager;
 
-    @Value("${codesandbox.type:example}")
+    @Value("${codesandbox.type:remote}")
     private String type;
 
 
