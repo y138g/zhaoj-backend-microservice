@@ -17,7 +17,7 @@ spring:
   # ?????
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://159.75.167.80:3306/zhaoj
+    url: jdbc:mysql://服务器ip地址:3306/zhaoj
     username: zhaoj
     password: root
   # Redis ??

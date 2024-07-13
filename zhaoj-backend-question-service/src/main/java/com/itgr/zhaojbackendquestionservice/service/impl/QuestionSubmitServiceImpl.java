@@ -16,8 +16,8 @@ import com.itgr.zhaojbackendmodel.model.entity.User;
 import com.itgr.zhaojbackendmodel.model.enums.QuestionSubmitLanguageEnum;
 import com.itgr.zhaojbackendmodel.model.enums.QuestionSubmitStatusEnum;
 import com.itgr.zhaojbackendmodel.model.vo.QuestionSubmitVO;
-import com.itgr.zhaojbackendquestionservice.rabbitmq.MyMessageProducer;
 import com.itgr.zhaojbackendquestionservice.mapper.QuestionSubmitMapper;
+import com.itgr.zhaojbackendquestionservice.rabbitmq.MyMessageProducer;
 import com.itgr.zhaojbackendquestionservice.service.QuestionService;
 import com.itgr.zhaojbackendquestionservice.service.QuestionSubmitService;
 import com.itgr.zhaojbackendserviceclient.service.JudgeFeignClient;
@@ -88,7 +88,7 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         questionSubmit.setJudgeInfo("{}");
         boolean save = this.save(questionSubmit);
         if (!save){
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "数据插入失败");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "数据插入异常!");
         }
         //题目提交数+1
         UpdateWrapper<Question> updateWrapper = new UpdateWrapper<>();

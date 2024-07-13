@@ -43,6 +43,8 @@ services:
       - "8104:8104"
     networks:
       - mynetwork
+    extra_hosts:
+      - host.docker.internal:host-gateway
     depends_on:
       - zhaoj-backend-user-service
       - zhaoj-backend-question-service

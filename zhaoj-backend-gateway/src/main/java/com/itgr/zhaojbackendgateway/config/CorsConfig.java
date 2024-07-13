@@ -19,7 +19,7 @@ public class CorsConfig {
         config.addAllowedMethod("*");
         config.setAllowCredentials(true);
         //todo 修改为实际域名和IP
-        config.setAllowedOriginPatterns(Arrays.asList("http://nozhanan.com", "http://101.126.19.192"));
+        config.setAllowedOriginPatterns(Arrays.asList("线上环境"));
         config.addAllowedHeader("*");
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource(new PathPatternParser());
         source.registerCorsConfiguration("/**", config);

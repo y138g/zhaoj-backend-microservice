@@ -19,7 +19,7 @@ public class MyMessageConsumer {
     private JudgeService judgeService;
 
     @SneakyThrows
-    @RabbitListener(queues = {RabbitMqConfig.QUEUE_NAME}, ackMode = "MANUAL", autoStartup = "false")
+    @RabbitListener(queues = {RabbitMqConfig.QUEUE_NAME}, ackMode = "MANUAL", autoStartup = "true")
     public void receiveMessage(String message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) {
         log.info("receiveMessage message = {}", message);
         long questionSubmitId = Long.parseLong(message);
