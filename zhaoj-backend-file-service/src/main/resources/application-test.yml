@@ -1,0 +1,15 @@
+#  todo 测试环境，上线请更改配置
+spring:
+  application:
+    name: zhaoj-backend-file-service
+  #  dev
+  profiles:
+    active: dev
+# oss
+aliyun:
+  oss:
+    file:
+      endpoint:
+      accessKeyId:
+      accessKeySecret:
+      bucketName:
