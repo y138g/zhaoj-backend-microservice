@@ -1,0 +1,6 @@
+# todo 测试环境，上线请更改配置
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848

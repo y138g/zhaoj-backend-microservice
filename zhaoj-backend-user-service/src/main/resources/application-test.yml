@@ -1,0 +1,69 @@
+# todo 测试环境，上线请更改配置
+spring:
+  application:
+    name: zhaoj-backend-user-service
+  #  dev
+  profiles:
+    active: dev
+  #  swagger3
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  # session
+  session:
+    store-type: redis
+    # 30 day
+    timeout: 2592000
+  # MySQL datasource
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/zhaoj
+    username: zhaoj
+    password: 123456
+  # Redis
+  redis:
+    database: 1
+    host: localhost
+    port: 6379
+    timeout: 5000
+  servlet:
+    multipart:
+      max-file-size: 10MB
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+server:
+  address: 0.0.0.0
+  port: 8102
+  servlet:
+    context-path: /api/user
+    # cookie 30 day
+    session:
+      cookie:
+        max-age: 2592000
+        path: /api
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: false
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDelete
+      logic-delete-value:
+      logic-not-delete-value: 0
+# oss
+aliyun:
+  oss:
+    file:
+      endpoint:
+      accessKeyId:
+      accessKeySecret:
+      bucketName:
+# codeSandbox
+codesandbox:
+  type: remote
+  box:
+    url: http://localhost:8888/executeCode
+knife4j:
+  enable: true
