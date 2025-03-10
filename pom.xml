@@ -18,6 +18,7 @@
         <module>zhaoj-backend-judge-service</module>
         <module>zhaoj-backend-file-service</module>
         <module>zhaoj-backend-chartgen-service</module>
+        <module>zhaoj-backend-ranking-service</module>
     </modules>
     <properties>
         <java.version>8</java.version>
