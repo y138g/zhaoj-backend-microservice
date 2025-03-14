@@ -41,6 +41,11 @@ public class QuestionUpdateRequest implements Serializable {
     private String answer;
 
     /**
+     * 题库
+     */
+    private List<Long> bankIds;
+
+    /**
      * 判题用例
      */
     private List<JudgeCase> judgeCase;

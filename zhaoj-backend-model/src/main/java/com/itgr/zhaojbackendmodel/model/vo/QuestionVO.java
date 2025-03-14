@@ -32,6 +32,11 @@ public class QuestionVO implements Serializable {
     private String content;
 
     /**
+     * 题库
+     */
+    private List<Long> bankIds;
+
+    /**
      * 标签列表
      */
     private List<String> tags;

@@ -16,8 +16,11 @@ import com.itgr.zhaojbackendmodel.model.dto.questionsubmit.QuestionSubmitQueryRe
 import com.itgr.zhaojbackendmodel.model.entity.Question;
 import com.itgr.zhaojbackendmodel.model.entity.QuestionSubmit;
 import com.itgr.zhaojbackendmodel.model.entity.User;
+import com.itgr.zhaojbackendmodel.model.vo.QuestionBankVO;
 import com.itgr.zhaojbackendmodel.model.vo.QuestionSubmitVO;
 import com.itgr.zhaojbackendmodel.model.vo.QuestionVO;
+import com.itgr.zhaojbackendquestionservice.service.BankQuestionService;
+import com.itgr.zhaojbackendquestionservice.service.BankService;
 import com.itgr.zhaojbackendquestionservice.service.QuestionService;
 import com.itgr.zhaojbackendquestionservice.service.QuestionSubmitService;
 import com.itgr.zhaojbackendserviceclient.service.UserFeignClient;
@@ -49,6 +52,12 @@ public class QuestionController {
     @Resource
     private QuestionSubmitService questionSubmitService;
 
+    @Resource
+    private BankService bankService;
+
+    @Resource
+    private BankQuestionService bankQuestionService;
+
     private final static Gson GSON = new Gson();
 
     // region 增删改查
@@ -61,10 +70,17 @@ public class QuestionController {
      * @return
      */
     @PostMapping("/add")
-    public BaseResponse<Long> addQuestion(@RequestBody QuestionAddRequest questionAddRequest, HttpServletRequest request) {
+    public BaseResponse<Long> addQuestion(@RequestBody QuestionAddRequest questionAddRequest,
+                                          HttpServletRequest request) {
         if (questionAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+        if (questionAddRequest.getBankIds().size() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "题目至少属于一个题库");
+        }
+        ThrowUtils.throwIf(!bankService.validBank(questionAddRequest.getBankIds()),
+                ErrorCode.PARAMS_ERROR, "所选题库不存在！");
+
         Question question = new Question();
         BeanUtils.copyProperties(questionAddRequest, question);
         List<String> tags = questionAddRequest.getTags();
@@ -84,10 +100,15 @@ public class QuestionController {
         question.setUserId(loginUser.getId());
         question.setFavourNum(0);
         question.setThumbNum(0);
-        boolean result = questionService.save(question);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        boolean resultSaveQuestion = questionService.save(question);
+        ThrowUtils.throwIf(!resultSaveQuestion, ErrorCode.OPERATION_ERROR);
+        // 新增题库题目关联
+        boolean resultSaveQuestionBank = bankQuestionService.
+                addBankAndQuestion(question.getId(), questionAddRequest.getBankIds());
+        ThrowUtils.throwIf(!resultSaveQuestionBank, ErrorCode.OPERATION_ERROR);
         long newQuestionId = question.getId();
         return ResultUtils.success(newQuestionId);
+
     }
 
     /**
@@ -111,8 +132,11 @@ public class QuestionController {
         if (!oldQuestion.getUserId().equals(user.getId()) && !userFeignClient.isAdmin(user)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
-        boolean b = questionService.removeById(id);
-        return ResultUtils.success(b);
+        // 删除题库题目中间表
+        boolean resultMiddle = bankQuestionService.removeByQuestionId(id);
+        boolean result = questionService.removeById(id);
+        ThrowUtils.throwIf(!(result && resultMiddle), ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(true);
     }
 
     /**
@@ -127,6 +151,13 @@ public class QuestionController {
         if (questionUpdateRequest == null || questionUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+
+        if (questionUpdateRequest.getBankIds().size() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "题目至少属于一个题库");
+        }
+        ThrowUtils.throwIf(!bankService.validBank(questionUpdateRequest.getBankIds()),
+                ErrorCode.PARAMS_ERROR, "所选题库不存在！");
+
         Question question = new Question();
         BeanUtils.copyProperties(questionUpdateRequest, question);
         List<String> tags = questionUpdateRequest.getTags();
@@ -148,7 +179,12 @@ public class QuestionController {
         Question oldQuestion = questionService.getById(id);
         ThrowUtils.throwIf(oldQuestion == null, ErrorCode.NOT_FOUND_ERROR);
         boolean result = questionService.updateById(question);
-        return ResultUtils.success(result);
+        // 新增题库题目关联 先删除再新增
+        boolean remove = bankQuestionService.removeByQuestionId(id);
+        boolean resultSaveQuestionBank = bankQuestionService.
+                addBankAndQuestion(question.getId(), questionUpdateRequest.getBankIds());
+        ThrowUtils.throwIf(!(result && remove && resultSaveQuestionBank), ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(true);
     }
 
     /**
@@ -158,7 +194,7 @@ public class QuestionController {
      * @return
      */
     @GetMapping("/get")
-    public BaseResponse<Question> getQuestionById(long id, HttpServletRequest request) {
+    public BaseResponse<QuestionBankVO> getQuestionById(long id, HttpServletRequest request) {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -171,7 +207,11 @@ public class QuestionController {
         if (!question.getUserId().equals(loginUser.getId()) && !userFeignClient.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
-        return ResultUtils.success(question);
+        QuestionBankVO questionBankVO = new QuestionBankVO();
+        BeanUtils.copyProperties(question, questionBankVO);
+        List<Long> bankQuestionById = bankQuestionService.getBankQuestionById(questionBankVO.getId());
+        questionBankVO.setBankIds(bankQuestionById);
+        return ResultUtils.success(questionBankVO);
     }
 
     /**
@@ -189,7 +229,9 @@ public class QuestionController {
         if (question == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
-        return ResultUtils.success(questionService.getQuestionVO(question, request));
+        QuestionVO questionVO = questionService.getQuestionVO(question, request);
+        questionVO.setBankIds(bankQuestionService.getBankQuestionById(id));
+        return ResultUtils.success(questionVO);
     }
 
     /**
@@ -201,7 +243,7 @@ public class QuestionController {
      */
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<QuestionVO>> listQuestionVOByPage(@RequestBody QuestionQueryRequest questionQueryRequest,
-            HttpServletRequest request) {
+                                                               HttpServletRequest request) {
         long current = questionQueryRequest.getCurrent();
         long size = questionQueryRequest.getPageSize();
         // 限制爬虫
@@ -220,7 +262,7 @@ public class QuestionController {
      */
     @PostMapping("/my/list/page/vo")
     public BaseResponse<Page<QuestionVO>> listMyQuestionVOByPage(@RequestBody QuestionQueryRequest questionQueryRequest,
-            HttpServletRequest request) {
+                                                                 HttpServletRequest request) {
         if (questionQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -245,7 +287,7 @@ public class QuestionController {
     @PostMapping("/list/page")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Page<Question>> listQuestionByPage(@RequestBody QuestionQueryRequest questionQueryRequest,
-                                                   HttpServletRequest request) {
+                                                           HttpServletRequest request) {
         long current = questionQueryRequest.getCurrent();
         long size = questionQueryRequest.getPageSize();
         Page<Question> questionPage = questionService.page(new Page<>(current, size),
@@ -263,7 +305,8 @@ public class QuestionController {
      * @return
      */
     @PostMapping("/edit")
-    public BaseResponse<Boolean> editQuestion(@RequestBody QuestionEditRequest questionEditRequest, HttpServletRequest request) {
+    public BaseResponse<Boolean> editQuestion(@RequestBody QuestionEditRequest questionEditRequest,
+                                              HttpServletRequest request) {
         if (questionEditRequest == null || questionEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -293,7 +336,12 @@ public class QuestionController {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
         boolean result = questionService.updateById(question);
-        return ResultUtils.success(result);
+        // 新增题库题目关联 先删除再新增
+        boolean remove = bankQuestionService.removeByQuestionId(id);
+        boolean resultSaveQuestionBank = bankQuestionService.
+                addBankAndQuestion(question.getId(), questionEditRequest.getBankIds());
+        ThrowUtils.throwIf(!(result && remove && resultSaveQuestionBank), ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(true);
     }
 
     /**
@@ -323,7 +371,8 @@ public class QuestionController {
      * @return
      */
     @PostMapping("/question_submit/list/page")
-    public BaseResponse<Page<QuestionSubmitVO>> listQuestionSubmitByPage(@RequestBody QuestionSubmitQueryRequest questionSubmitQueryRequest,
+    public BaseResponse<Page<QuestionSubmitVO>> listQuestionSubmitByPage(@RequestBody QuestionSubmitQueryRequest
+                                                                                 questionSubmitQueryRequest,
                                                                          HttpServletRequest request) {
         long current = questionSubmitQueryRequest.getCurrent();
         long size = questionSubmitQueryRequest.getPageSize();
@@ -334,7 +383,6 @@ public class QuestionController {
         // 返回脱敏信息
         return ResultUtils.success(questionSubmitService.getQuestionSubmitVOPage(questionSubmitPage, loginUser));
     }
-
 
 
 }

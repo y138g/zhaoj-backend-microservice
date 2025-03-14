@@ -30,6 +30,11 @@ public class QuestionAddRequest implements Serializable {
     private List<String> tags;
 
     /**
+     * 题库
+     */
+    private List<Long> bankIds;
+
+    /**
      * 题目答案
      */
     private String answer;
