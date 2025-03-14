@@ -9,10 +9,12 @@ import com.itgr.zhaojbackendcommon.exception.BusinessException;
 import com.itgr.zhaojbackendcommon.exception.ThrowUtils;
 import com.itgr.zhaojbackendcommon.utils.SqlUtils;
 import com.itgr.zhaojbackendmodel.model.dto.question.QuestionQueryRequest;
+import com.itgr.zhaojbackendmodel.model.entity.BankQuestion;
 import com.itgr.zhaojbackendmodel.model.entity.Question;
 import com.itgr.zhaojbackendmodel.model.entity.User;
 import com.itgr.zhaojbackendmodel.model.vo.QuestionVO;
 import com.itgr.zhaojbackendmodel.model.vo.UserVO;
+import com.itgr.zhaojbackendquestionservice.mapper.BankQuestionMapper;
 import com.itgr.zhaojbackendquestionservice.mapper.QuestionMapper;
 import com.itgr.zhaojbackendquestionservice.service.QuestionService;
 import com.itgr.zhaojbackendserviceclient.service.UserFeignClient;
@@ -29,20 +31,24 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
-* @author y138g
-* @description 针对表【question(题目)】的数据库操作Service实现
-* @createDate 2023-08-07 20:58:00
-*/
+ * @author y138g
+ * @description 针对表【question(题目)】的数据库操作Service实现
+ * @createDate 2023-08-07 20:58:00
+ */
 @Service
 public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
-    implements QuestionService {
+        implements QuestionService {
 
 
     @Resource
     private UserFeignClient userFeignClient;
 
+    @Resource
+    private BankQuestionMapper bankQuestionMapper;
+
     /**
      * 校验题目是否合法
+     *
      * @param question
      * @param add
      */
@@ -155,6 +161,20 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
         }).collect(Collectors.toList());
         questionVOPage.setRecords(questionVOList);
         return questionVOPage;
+    }
+
+    @Override
+    public List<QuestionVO> getQuestionVOByBankId(long bankId, HttpServletRequest request) {
+        // 根据bankId查询题库题目关联表
+        QueryWrapper<BankQuestion> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(ObjectUtils.isNotEmpty(bankId), "bankId", bankId);
+        List<BankQuestion> bankQuestionList = bankQuestionMapper.selectList(queryWrapper);
+        // 找出所有questionId
+        List<Long> questionIds = bankQuestionList.stream()
+                .map(BankQuestion::getQuestionId).collect(Collectors.toList());
+        // 再根据questionId获取所有题目
+        return questionIds.stream()
+                .map(questionId -> QuestionVO.objToVo(this.getById(questionId))).collect(Collectors.toList());
     }
 
 
