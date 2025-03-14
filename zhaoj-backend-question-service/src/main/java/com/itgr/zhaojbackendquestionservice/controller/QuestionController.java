@@ -384,5 +384,14 @@ public class QuestionController {
         return ResultUtils.success(questionSubmitService.getQuestionSubmitVOPage(questionSubmitPage, loginUser));
     }
 
+    @GetMapping("/question/bankId/list/page")
+    public BaseResponse<List<QuestionVO>> listQuestionByBankId(long bankId, HttpServletRequest request) {
+        if (bankId <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        List<QuestionVO> questionVOList = questionService.getQuestionVOByBankId(bankId, request);
+        // 返回脱敏信息
+        return ResultUtils.success(questionVOList);
+    }
 
 }

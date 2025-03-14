@@ -8,6 +8,7 @@ import com.itgr.zhaojbackendmodel.model.entity.Question;
 import com.itgr.zhaojbackendmodel.model.vo.QuestionVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * @author y138g
@@ -50,5 +51,14 @@ public interface QuestionService extends IService<Question> {
      * @return
      */
     Page<QuestionVO> getQuestionVOPage(Page<Question> questionPage, HttpServletRequest request);
+
+    /**
+     * 根据题库 id 获取题目封装列表
+     *
+     * @param bankId  题库 id
+     * @param request 请求
+     * @return 题目封装列表
+     */
+    List<QuestionVO> getQuestionVOByBankId(long bankId, HttpServletRequest request);
 
 }
