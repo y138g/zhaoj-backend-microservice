@@ -16,7 +16,7 @@ public class Question implements Serializable {
     /**
      * id
      */
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
@@ -33,6 +33,11 @@ public class Question implements Serializable {
      * 标签列表（json 数组）
      */
     private String tags;
+
+    /**
+     * 题目难度 （0-简单；1-中等；2-困难）
+     */
+    private Integer difficulty;
 
     /**
      * 题目答案

@@ -2,6 +2,7 @@ package com.itgr.zhaojbackendquestionservice.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.itgr.zhaojbackendmodel.model.entity.Bank;
+import com.itgr.zhaojbackendmodel.model.vo.BankVO;
 
 import java.util.List;
 
@@ -20,4 +21,24 @@ public interface BankService extends IService<Bank> {
      */
     boolean validBank(List<Long> bankIds);
 
+    /**
+     * 获取热榜前三的题库 TODO 目前暂无热榜，改为采取创建前三的题库
+     *
+     * @return 题库列表
+     */
+    List<BankVO> getBankTopThree();
+
+    /**
+     * 获取所有题库
+     *
+     * @return 题库列表
+     */
+    List<BankVO> getBankAll();
+
+    /**
+     * 更新题库题目数量
+     *
+     * @param bankIds 题库id列表
+     */
+    void updateBankQuestionNum(List<Long> bankIds);
 }

@@ -59,11 +59,17 @@ public class QuestionInnerController implements QuestionFeignClient {
         return questionSubmitService.updateById(questionSubmit);
     }
 
+    /**
+     * 更新题目通过数
+     *
+     * @param questionId 题目 id
+     * @return 返回结果
+     */
     @PostMapping("/question/updateAcceptedNum")
     @Override
     public boolean updateAcceptedNum(@RequestBody long questionId) {
         UpdateWrapper<Question> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", questionId).setSql("accepted = accepted + 1");
-        return questionService.update(null,updateWrapper);
+        return questionService.update(null, updateWrapper);
     }
 }

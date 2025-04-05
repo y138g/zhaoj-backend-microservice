@@ -12,16 +12,15 @@ import com.itgr.zhaojbackendmodel.model.dto.bank.BankAddRequest;
 import com.itgr.zhaojbackendmodel.model.dto.bank.BankUpdateRequest;
 import com.itgr.zhaojbackendmodel.model.entity.Bank;
 import com.itgr.zhaojbackendmodel.model.entity.User;
+import com.itgr.zhaojbackendmodel.model.vo.BankVO;
 import com.itgr.zhaojbackendquestionservice.service.BankService;
 import com.itgr.zhaojbackendserviceclient.service.UserFeignClient;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -105,5 +104,23 @@ public class BankController {
         return ResultUtils.success(bank.getId());
     }
 
+    /**
+     * 查询热度前三的题库
+     *
+     * @return 热度前三的题库列表
+     */
+    @GetMapping("/top")
+    public BaseResponse<List<BankVO>> getBankTopThree() {
+        return ResultUtils.success(bankService.getBankTopThree());
+    }
 
+    /**
+     * 查询所有题库
+     *
+     * @return 所有题库列表
+     */
+    @GetMapping("/get/all")
+    public BaseResponse<List<BankVO>> getBankAll() {
+        return ResultUtils.success(bankService.getBankAll());
+    }
 }

@@ -1,12 +1,16 @@
 package com.itgr.zhaojbackendquestionservice.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.itgr.zhaojbackendmodel.model.entity.Bank;
 import com.itgr.zhaojbackendmodel.model.entity.BankQuestion;
 import com.itgr.zhaojbackendquestionservice.mapper.BankQuestionMapper;
 import com.itgr.zhaojbackendquestionservice.service.BankQuestionService;
+import com.itgr.zhaojbackendrankingservice.mapper.BankMapper;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +23,9 @@ import java.util.List;
 public class BankQuestionServiceImpl extends ServiceImpl<BankQuestionMapper, BankQuestion>
         implements BankQuestionService {
 
+    @Resource
+    private BankMapper bankMapper;
+
     @Override
     public boolean addBankAndQuestion(Long questionId, List<Long> bankIds) {
         for (Long bankId : bankIds) {
@@ -29,6 +36,9 @@ public class BankQuestionServiceImpl extends ServiceImpl<BankQuestionMapper, Ban
             if (!result) {
                 return false;
             }
+            UpdateWrapper<Bank> bankUpdateWrapper = new UpdateWrapper<>();
+            bankUpdateWrapper.eq("id", bankId).setSql("questionNum = questionNum + 1");
+            bankMapper.update(null, bankUpdateWrapper);
         }
         return true;
     }
@@ -37,6 +47,14 @@ public class BankQuestionServiceImpl extends ServiceImpl<BankQuestionMapper, Ban
     public boolean removeByQuestionId(Long questionId) {
         QueryWrapper<BankQuestion> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("questionId", questionId);
+        // 删除前先获取对应的 bankId
+        List<BankQuestion> bankQuestionList = this.list(queryWrapper);
+        for (BankQuestion bankQuestion : bankQuestionList) {
+            Long bankId = bankQuestion.getBankId();
+            UpdateWrapper<Bank> bankUpdateWrapper = new UpdateWrapper<>();
+            bankUpdateWrapper.eq("id", bankId).setSql("questionNum = questionNum - 1");
+            bankMapper.update(null, bankUpdateWrapper);
+        }
         return this.remove(queryWrapper);
     }
 

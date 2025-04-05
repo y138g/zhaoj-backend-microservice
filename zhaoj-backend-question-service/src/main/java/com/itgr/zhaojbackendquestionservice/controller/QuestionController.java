@@ -63,23 +63,25 @@ public class QuestionController {
     // region 增删改查
 
     /**
-     * 创建
+     * 新增题目
      *
-     * @param questionAddRequest
-     * @param request
-     * @return
+     * @param questionAddRequest 题目信息
+     * @param request            请求
+     * @ return 题目id
      */
     @PostMapping("/add")
     public BaseResponse<Long> addQuestion(@RequestBody QuestionAddRequest questionAddRequest,
                                           HttpServletRequest request) {
-        if (questionAddRequest == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
-        if (questionAddRequest.getBankIds().size() <= 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "题目至少属于一个题库");
-        }
+        ThrowUtils.throwIf(questionAddRequest == null, ErrorCode.PARAMS_ERROR);
+
+        ThrowUtils.throwIf(questionAddRequest.getBankIds().size() <= 0,
+                ErrorCode.PARAMS_ERROR, "题目至少属于一个题库！");
+
         ThrowUtils.throwIf(!bankService.validBank(questionAddRequest.getBankIds()),
                 ErrorCode.PARAMS_ERROR, "所选题库不存在！");
+
+        ThrowUtils.throwIf(questionAddRequest.getDifficulty() == null,
+                ErrorCode.PARAMS_ERROR, "难度不能为空！");
 
         Question question = new Question();
         BeanUtils.copyProperties(questionAddRequest, question);
@@ -112,11 +114,11 @@ public class QuestionController {
     }
 
     /**
-     * 删除
+     * 删除题目
      *
-     * @param deleteRequest
-     * @param request
-     * @return
+     * @param deleteRequest id
+     * @param request       请求
+     * @return 是否成功
      */
     @PostMapping("/delete")
     public BaseResponse<Boolean> deleteQuestion(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
@@ -140,23 +142,26 @@ public class QuestionController {
     }
 
     /**
-     * 更新（仅管理员）
+     * 更新题目（仅管理员）
      *
-     * @param questionUpdateRequest
-     * @return
+     * @param questionUpdateRequest 更新信息
+     * @return 是否成功
      */
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> updateQuestion(@RequestBody QuestionUpdateRequest questionUpdateRequest) {
-        if (questionUpdateRequest == null || questionUpdateRequest.getId() <= 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
 
-        if (questionUpdateRequest.getBankIds().size() <= 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "题目至少属于一个题库");
-        }
+        ThrowUtils.throwIf(questionUpdateRequest == null || questionUpdateRequest.getId() <= 0,
+                ErrorCode.PARAMS_ERROR);
+
+        ThrowUtils.throwIf(questionUpdateRequest.getBankIds().size() <= 0,
+                ErrorCode.PARAMS_ERROR, "题目至少属于一个题库");
+
         ThrowUtils.throwIf(!bankService.validBank(questionUpdateRequest.getBankIds()),
                 ErrorCode.PARAMS_ERROR, "所选题库不存在！");
+
+        ThrowUtils.throwIf(questionUpdateRequest.getDifficulty() == null,
+                ErrorCode.PARAMS_ERROR, "难度不能为空！");
 
         Question question = new Question();
         BeanUtils.copyProperties(questionUpdateRequest, question);
@@ -195,18 +200,13 @@ public class QuestionController {
      */
     @GetMapping("/get")
     public BaseResponse<QuestionBankVO> getQuestionById(long id, HttpServletRequest request) {
-        if (id <= 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
+        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
         Question question = questionService.getById(id);
-        if (question == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
-        }
+        ThrowUtils.throwIf(question == null, ErrorCode.NOT_FOUND_ERROR);
         User loginUser = userFeignClient.getLoginUser(request);
         // 不是本人或管理员，不能直接获取所有信息
-        if (!question.getUserId().equals(loginUser.getId()) && !userFeignClient.isAdmin(loginUser)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
+        ThrowUtils.throwIf(!question.getUserId().equals(loginUser.getId()) &&
+                !userFeignClient.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR);
         QuestionBankVO questionBankVO = new QuestionBankVO();
         BeanUtils.copyProperties(question, questionBankVO);
         List<Long> bankQuestionById = bankQuestionService.getBankQuestionById(questionBankVO.getId());
@@ -222,13 +222,9 @@ public class QuestionController {
      */
     @GetMapping("/get/vo")
     public BaseResponse<QuestionVO> getQuestionVOById(long id, HttpServletRequest request) {
-        if (id <= 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
+        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
         Question question = questionService.getById(id);
-        if (question == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
-        }
+        ThrowUtils.throwIf(question == null, ErrorCode.NOT_FOUND_ERROR);
         QuestionVO questionVO = questionService.getQuestionVO(question, request);
         questionVO.setBankIds(bankQuestionService.getBankQuestionById(id));
         return ResultUtils.success(questionVO);
@@ -384,14 +380,18 @@ public class QuestionController {
         return ResultUtils.success(questionSubmitService.getQuestionSubmitVOPage(questionSubmitPage, loginUser));
     }
 
+    /**
+     * 根据题库 id 获取题目列表
+     *
+     * @param bankId  题库 id
+     * @param request 请求
+     * @return 题目列表
+     */
     @GetMapping("/question/bankId/list/page")
     public BaseResponse<List<QuestionVO>> listQuestionByBankId(long bankId, HttpServletRequest request) {
-        if (bankId <= 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
+        ThrowUtils.throwIf(bankId <= 0, ErrorCode.PARAMS_ERROR);
         List<QuestionVO> questionVOList = questionService.getQuestionVOByBankId(bankId, request);
         // 返回脱敏信息
         return ResultUtils.success(questionVOList);
     }
-
 }
