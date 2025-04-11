@@ -8,15 +8,13 @@ import com.itgr.zhaojbackendjudgeservice.judge.codesandbox.CodeSandbox;
 import com.itgr.zhaojbackendmodel.model.codesandbox.ExecuteCodeRequest;
 import com.itgr.zhaojbackendmodel.model.codesandbox.ExecuteCodeResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 
 /**
  * 远程代码沙箱（实际调用接口的沙箱）
  */
 public class RemoteCodeSandbox implements CodeSandbox {
 
-    @Value("${codesandbox.box.url}")
-    private String boxUrl;
+    private final String boxUrl = "http://localhost:8134/executeCode";
 
     // 定义鉴权请求头和密钥
     private static final String AUTH_REQUEST_HEADER = "auth";
