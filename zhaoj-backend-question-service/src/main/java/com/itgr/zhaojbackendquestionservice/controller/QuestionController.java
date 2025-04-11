@@ -394,4 +394,14 @@ public class QuestionController {
         // 返回脱敏信息
         return ResultUtils.success(questionVOList);
     }
+
+    @GetMapping("/question_submit/get")
+    public BaseResponse<QuestionSubmitVO> getQuestionSubmitVO(long questionSubmitId, HttpServletRequest request) {
+        ThrowUtils.throwIf(questionSubmitId <= 0, ErrorCode.PARAMS_ERROR);
+        QuestionSubmit questionSubmit = questionSubmitService.getById(questionSubmitId);
+        ThrowUtils.throwIf(questionSubmit == null, ErrorCode.NOT_FOUND_ERROR);
+        User loginUser = userFeignClient.getLoginUser(request);
+        QuestionSubmitVO questionSubmitVO = questionSubmitService.getQuestionSubmitVO(questionSubmit, loginUser);
+        return ResultUtils.success(questionSubmitVO);
+    }
 }

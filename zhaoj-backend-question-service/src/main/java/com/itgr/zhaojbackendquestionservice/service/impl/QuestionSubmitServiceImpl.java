@@ -16,8 +16,8 @@ import com.itgr.zhaojbackendmodel.model.entity.User;
 import com.itgr.zhaojbackendmodel.model.enums.QuestionSubmitLanguageEnum;
 import com.itgr.zhaojbackendmodel.model.enums.QuestionSubmitStatusEnum;
 import com.itgr.zhaojbackendmodel.model.vo.QuestionSubmitVO;
-import com.itgr.zhaojbackendquestionservice.rabbitmq.MyMessageProducer;
 import com.itgr.zhaojbackendquestionservice.mapper.QuestionSubmitMapper;
+import com.itgr.zhaojbackendquestionservice.rabbitmq.MyMessageProducer;
 import com.itgr.zhaojbackendquestionservice.service.QuestionService;
 import com.itgr.zhaojbackendquestionservice.service.QuestionSubmitService;
 import com.itgr.zhaojbackendserviceclient.service.JudgeFeignClient;
@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -98,9 +99,9 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         // 发送消息
         myMessageProducer.sendMessage("code_exchange", "my_routingKey", String.valueOf(questionSubmitId));
         // 执行判题服务
-//        CompletableFuture.runAsync(() -> {
-//            judgeFeignClient.doJudge(questionSubmitId);
-//        });
+        CompletableFuture.runAsync(() -> {
+            judgeFeignClient.doJudge(questionSubmitId);
+        });
         return questionSubmitId;
     }
 

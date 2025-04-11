@@ -10,7 +10,6 @@ import com.itgr.zhaojbackendmodel.model.entity.Question;
 * @Entity com.itgr.zhaoj.model.entity.Question
 */
 public interface QuestionMapper extends BaseMapper<Question> {
-
 }
 
 
