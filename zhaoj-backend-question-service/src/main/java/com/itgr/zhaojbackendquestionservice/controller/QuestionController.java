@@ -1,5 +1,7 @@
 package com.itgr.zhaojbackendquestionservice.controller;
 
+import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.gson.Gson;
 import com.itgr.zhaojbackendcommon.annotation.AuthCheck;
@@ -13,12 +15,8 @@ import com.itgr.zhaojbackendcommon.exception.ThrowUtils;
 import com.itgr.zhaojbackendmodel.model.dto.question.*;
 import com.itgr.zhaojbackendmodel.model.dto.questionsubmit.QuestionSubmitAddRequest;
 import com.itgr.zhaojbackendmodel.model.dto.questionsubmit.QuestionSubmitQueryRequest;
-import com.itgr.zhaojbackendmodel.model.entity.Question;
-import com.itgr.zhaojbackendmodel.model.entity.QuestionSubmit;
-import com.itgr.zhaojbackendmodel.model.entity.User;
-import com.itgr.zhaojbackendmodel.model.vo.QuestionBankVO;
-import com.itgr.zhaojbackendmodel.model.vo.QuestionSubmitVO;
-import com.itgr.zhaojbackendmodel.model.vo.QuestionVO;
+import com.itgr.zhaojbackendmodel.model.entity.*;
+import com.itgr.zhaojbackendmodel.model.vo.*;
 import com.itgr.zhaojbackendquestionservice.service.BankQuestionService;
 import com.itgr.zhaojbackendquestionservice.service.BankService;
 import com.itgr.zhaojbackendquestionservice.service.QuestionService;
@@ -30,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -63,13 +62,14 @@ public class QuestionController {
     // region 增删改查
 
     /**
-     * 新增题目
+     * 新增题目（仅管理员）
      *
      * @param questionAddRequest 题目信息
      * @param request            请求
      * @ return 题目id
      */
     @PostMapping("/add")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Long> addQuestion(@RequestBody QuestionAddRequest questionAddRequest,
                                           HttpServletRequest request) {
         ThrowUtils.throwIf(questionAddRequest == null, ErrorCode.PARAMS_ERROR);
@@ -121,6 +121,7 @@ public class QuestionController {
      * @return 是否成功
      */
     @PostMapping("/delete")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> deleteQuestion(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -193,32 +194,10 @@ public class QuestionController {
     }
 
     /**
-     * 根据 id 获取
+     * 根据 id 获取题目（脱敏）
      *
-     * @param id
-     * @return
-     */
-    @GetMapping("/get")
-    public BaseResponse<QuestionBankVO> getQuestionById(long id, HttpServletRequest request) {
-        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
-        Question question = questionService.getById(id);
-        ThrowUtils.throwIf(question == null, ErrorCode.NOT_FOUND_ERROR);
-        User loginUser = userFeignClient.getLoginUser(request);
-        // 不是本人或管理员，不能直接获取所有信息
-        ThrowUtils.throwIf(!question.getUserId().equals(loginUser.getId()) &&
-                !userFeignClient.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR);
-        QuestionBankVO questionBankVO = new QuestionBankVO();
-        BeanUtils.copyProperties(question, questionBankVO);
-        List<Long> bankQuestionById = bankQuestionService.getBankQuestionById(questionBankVO.getId());
-        questionBankVO.setBankIds(bankQuestionById);
-        return ResultUtils.success(questionBankVO);
-    }
-
-    /**
-     * 根据 id 获取（脱敏）
-     *
-     * @param id
-     * @return
+     * @param id 题目 id
+     * @return 题目信息
      */
     @GetMapping("/get/vo")
     public BaseResponse<QuestionVO> getQuestionVOById(long id, HttpServletRequest request) {
@@ -231,13 +210,39 @@ public class QuestionController {
     }
 
     /**
-     * 分页获取列表（封装类）
+     * 根据 id 获取题目（更新前操作）
      *
-     * @param questionQueryRequest
-     * @param request
-     * @return
+     * @param id 题目 id
+     * @return 题目信息
+     */
+    @GetMapping("manage/get")
+    public BaseResponse<ManageQuestionVO> getManageQuestionById(long id, HttpServletRequest request) {
+        Question question = questionService.getById(id);
+        ThrowUtils.throwIf(question == null, ErrorCode.NOT_FOUND_ERROR);
+        ManageQuestionVO manageQuestionVO = new ManageQuestionVO();
+        BeanUtils.copyProperties(question, manageQuestionVO);
+        QueryWrapper<BankQuestion> queryWrapper = new QueryWrapper<>();
+        List<Object> bankIdList = bankQuestionService.listObjs(
+                queryWrapper.eq("questionId", id).select("bankId"));
+        List<String> bankTitle = new ArrayList<>();
+        for (Object bankId : bankIdList) {
+            QueryWrapper<Bank> bankQueryWrapper = new QueryWrapper<>();
+            bankQueryWrapper.eq("id", bankId);
+            bankTitle.add(bankService.getOne(bankQueryWrapper).getTitle());
+        }
+        manageQuestionVO.setBankTitle(bankTitle);
+        return ResultUtils.success(manageQuestionVO);
+    }
+
+    /**
+     * 分页获取题目列表（封装类）
+     *
+     * @param questionQueryRequest 查询条件
+     * @param request              请求
+     * @return 分页题目数据
      */
     @PostMapping("/list/page/vo")
+    @Deprecated
     public BaseResponse<Page<QuestionVO>> listQuestionVOByPage(@RequestBody QuestionQueryRequest questionQueryRequest,
                                                                HttpServletRequest request) {
         long current = questionQueryRequest.getCurrent();
@@ -252,11 +257,12 @@ public class QuestionController {
     /**
      * 分页获取当前用户创建的资源列表
      *
-     * @param questionQueryRequest
-     * @param request
-     * @return
+     * @param questionQueryRequest 查询条件
+     * @param request              请求
+     * @return 分页数据
      */
     @PostMapping("/my/list/page/vo")
+    @Deprecated
     public BaseResponse<Page<QuestionVO>> listMyQuestionVOByPage(@RequestBody QuestionQueryRequest questionQueryRequest,
                                                                  HttpServletRequest request) {
         if (questionQueryRequest == null) {
@@ -273,34 +279,18 @@ public class QuestionController {
         return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request));
     }
 
-    /**
-     * 分页获取题目列表（仅管理员）
-     *
-     * @param questionQueryRequest
-     * @param request
-     * @return
-     */
-    @PostMapping("/list/page")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Page<Question>> listQuestionByPage(@RequestBody QuestionQueryRequest questionQueryRequest,
-                                                           HttpServletRequest request) {
-        long current = questionQueryRequest.getCurrent();
-        long size = questionQueryRequest.getPageSize();
-        Page<Question> questionPage = questionService.page(new Page<>(current, size),
-                questionService.getQueryWrapper(questionQueryRequest));
-        return ResultUtils.success(questionPage);
-    }
 
     // endregion
 
     /**
      * 编辑（用户）
      *
-     * @param questionEditRequest
-     * @param request
-     * @return
+     * @param questionEditRequest 编辑信息
+     * @param request             请求
+     * @return 是否成功
      */
     @PostMapping("/edit")
+    @Deprecated
     public BaseResponse<Boolean> editQuestion(@RequestBody QuestionEditRequest questionEditRequest,
                                               HttpServletRequest request) {
         if (questionEditRequest == null || questionEditRequest.getId() <= 0) {
@@ -343,8 +333,8 @@ public class QuestionController {
     /**
      * 提交题目
      *
-     * @param questionSubmitAddRequest
-     * @param request
+     * @param questionSubmitAddRequest 提交做题信息
+     * @param request                  请求
      * @return 提交记录的 id
      */
     @PostMapping("/question_submit/do")
@@ -353,7 +343,7 @@ public class QuestionController {
         if (questionSubmitAddRequest == null || questionSubmitAddRequest.getQuestionId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        // 登录才能点赞
+        // 登录才能做题
         final User loginUser = userFeignClient.getLoginUser(request);
         long questionSubmitId = questionSubmitService.doQuestionSubmit(questionSubmitAddRequest, loginUser);
         return ResultUtils.success(questionSubmitId);
@@ -362,11 +352,12 @@ public class QuestionController {
     /**
      * 分页获取题目提交列表（除了管理员外，普通用户只能看到非答案、提交代码等公开信息）
      *
-     * @param questionSubmitQueryRequest
-     * @param request
-     * @return
+     * @param questionSubmitQueryRequest 查询条件
+     * @param request                    请求
+     * @return 分页题目提交数据
      */
     @PostMapping("/question_submit/list/page")
+    @Deprecated
     public BaseResponse<Page<QuestionSubmitVO>> listQuestionSubmitByPage(@RequestBody QuestionSubmitQueryRequest
                                                                                  questionSubmitQueryRequest,
                                                                          HttpServletRequest request) {
@@ -388,13 +379,20 @@ public class QuestionController {
      * @return 题目列表
      */
     @GetMapping("/question/bankId/list/page")
-    public BaseResponse<List<QuestionVO>> listQuestionByBankId(long bankId, HttpServletRequest request) {
+    public BaseResponse<List<QuestionVO>> listQuestionVOByBankId(long bankId, HttpServletRequest request) {
         ThrowUtils.throwIf(bankId <= 0, ErrorCode.PARAMS_ERROR);
         List<QuestionVO> questionVOList = questionService.getQuestionVOByBankId(bankId, request);
         // 返回脱敏信息
         return ResultUtils.success(questionVOList);
     }
 
+    /**
+     * 根据 id 获取题目提交信息（脱敏）
+     *
+     * @param questionSubmitId 题目提交 id
+     * @param request          请求
+     * @return 题目提交信息
+     */
     @GetMapping("/question_submit/get")
     public BaseResponse<QuestionSubmitVO> getQuestionSubmitVO(long questionSubmitId, HttpServletRequest request) {
         ThrowUtils.throwIf(questionSubmitId <= 0, ErrorCode.PARAMS_ERROR);
@@ -403,5 +401,29 @@ public class QuestionController {
         User loginUser = userFeignClient.getLoginUser(request);
         QuestionSubmitVO questionSubmitVO = questionSubmitService.getQuestionSubmitVO(questionSubmit, loginUser);
         return ResultUtils.success(questionSubmitVO);
+    }
+
+
+    /**
+     * 分页获取管理题目列表
+     *
+     * @param questionQueryRequest 查询请求
+     * @param request              请求
+     * @return 分页管理题目列表
+     */
+    @PostMapping("/manage/question/list/page")
+    public BaseResponse<Page<ManageQuestionVO>> listManageQuestionVOByPage(
+            @RequestBody QuestionQueryRequest questionQueryRequest, HttpServletRequest request) {
+        return ResultUtils.success(questionService.getQueryWrapperOfManageQuestionByPage(questionQueryRequest));
+    }
+
+    /**
+     * 获取题库列表（下拉框）
+     * @return 题库列表
+     */
+    @GetMapping("/manage/bank/list")
+    public BaseResponse<List<ManageBankVO>> listManageBankVO() {
+        List<BankVO> bankAll = bankService.getBankAll();
+        return ResultUtils.success(BeanUtil.copyToList(bankAll, ManageBankVO.class));
     }
 }

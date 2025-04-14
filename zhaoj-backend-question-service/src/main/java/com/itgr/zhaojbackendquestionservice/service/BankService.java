@@ -1,6 +1,8 @@
 package com.itgr.zhaojbackendquestionservice.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.itgr.zhaojbackendmodel.model.dto.bank.BankQueryRequest;
 import com.itgr.zhaojbackendmodel.model.entity.Bank;
 import com.itgr.zhaojbackendmodel.model.vo.BankVO;
 
@@ -36,9 +38,10 @@ public interface BankService extends IService<Bank> {
     List<BankVO> getBankAll();
 
     /**
-     * 更新题库题目数量
+     * 获取查询条件
      *
-     * @param bankIds 题库id列表
+     * @param bankQueryRequest 查询请求
+     * @return 查询条件
      */
-    void updateBankQuestionNum(List<Long> bankIds);
+    QueryWrapper<Bank> getQueryWrapper(BankQueryRequest bankQueryRequest);
 }

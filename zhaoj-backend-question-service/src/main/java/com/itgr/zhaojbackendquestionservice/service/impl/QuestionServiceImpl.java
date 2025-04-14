@@ -1,5 +1,6 @@
 package com.itgr.zhaojbackendquestionservice.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -9,25 +10,27 @@ import com.itgr.zhaojbackendcommon.exception.BusinessException;
 import com.itgr.zhaojbackendcommon.exception.ThrowUtils;
 import com.itgr.zhaojbackendcommon.utils.SqlUtils;
 import com.itgr.zhaojbackendmodel.model.dto.question.QuestionQueryRequest;
+import com.itgr.zhaojbackendmodel.model.entity.Bank;
 import com.itgr.zhaojbackendmodel.model.entity.BankQuestion;
 import com.itgr.zhaojbackendmodel.model.entity.Question;
 import com.itgr.zhaojbackendmodel.model.entity.User;
+import com.itgr.zhaojbackendmodel.model.vo.ManageQuestionVO;
 import com.itgr.zhaojbackendmodel.model.vo.QuestionVO;
 import com.itgr.zhaojbackendmodel.model.vo.UserVO;
 import com.itgr.zhaojbackendquestionservice.mapper.BankQuestionMapper;
 import com.itgr.zhaojbackendquestionservice.mapper.QuestionMapper;
 import com.itgr.zhaojbackendquestionservice.service.QuestionService;
+import com.itgr.zhaojbackendrankingservice.mapper.BankMapper;
 import com.itgr.zhaojbackendserviceclient.service.UserFeignClient;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -45,13 +48,11 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
 
     @Resource
     private BankQuestionMapper bankQuestionMapper;
+    @Autowired
+    private QuestionMapper questionMapper;
+    @Autowired
+    private BankMapper bankMapper;
 
-    /**
-     * 校验题目是否合法
-     *
-     * @param question
-     * @param add
-     */
     @Override
     public void validQuestion(Question question, boolean add) {
         if (question == null) {
@@ -85,12 +86,6 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
         }
     }
 
-    /**
-     * 获取查询包装类（用户根据哪些字段查询，根据前端传来的请求对象，得到 mybatis 框架支持的查询 QueryWrapper 类）
-     *
-     * @param questionQueryRequest
-     * @return
-     */
     @Override
     public QueryWrapper<Question> getQueryWrapper(QuestionQueryRequest questionQueryRequest) {
         QueryWrapper<Question> queryWrapper = new QueryWrapper<>();
@@ -124,6 +119,96 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
     }
 
     @Override
+    public Page<ManageQuestionVO> getQueryWrapperOfManageQuestionByPage(
+            QuestionQueryRequest questionQueryRequest) {
+        QueryWrapper<Question> queryWrapper = new QueryWrapper<>();
+
+        // 构建查询条件（保持不变）
+        Long id = questionQueryRequest.getId();
+        String title = questionQueryRequest.getTitle();
+        List<Long> bankIds = questionQueryRequest.getBankIds();
+        List<String> tags = questionQueryRequest.getTags();
+        Integer difficulty = questionQueryRequest.getDifficulty();
+        String sortField = questionQueryRequest.getSortField();
+        String sortOrder = questionQueryRequest.getSortOrder();
+
+        List<Long> ids = new ArrayList<>();
+        if (ObjectUtils.isNotEmpty(bankIds)) {
+            QueryWrapper<BankQuestion> bankQuestionQueryWrapper = new QueryWrapper<>();
+            bankQuestionQueryWrapper.in("bankId", bankIds);
+            List<Object> questionIds = bankQuestionMapper
+                    .selectObjs(bankQuestionQueryWrapper.select("questionId"));
+            ids = questionIds.stream().map(questionId -> (Long) questionId).collect(Collectors.toList());
+        }
+
+        queryWrapper.like(StringUtils.isNotBlank(title), "title", title);
+        queryWrapper.in(ObjectUtils.isNotEmpty(ids), "id", ids);
+        queryWrapper.eq(ObjectUtils.isNotEmpty(difficulty), "difficulty", difficulty);
+        if (CollectionUtils.isNotEmpty(tags)) {
+            tags.forEach(tag -> queryWrapper.like("tags", "\"" + tag + "\""));
+        }
+        queryWrapper.eq(ObjectUtils.isNotEmpty(id), "id", id);
+        queryWrapper.eq("isDelete", false);
+        queryWrapper.orderBy(SqlUtils.validSortField(sortField),
+                sortOrder.equals(CommonConstant.SORT_ORDER_ASC), sortField);
+
+        // 使用MyBatis-Plus分页查询
+        Page<Question> questionPage = new Page<>(questionQueryRequest.getCurrent(), questionQueryRequest.getPageSize());
+        questionMapper.selectPage(questionPage, queryWrapper);
+
+        List<ManageQuestionVO> manageQuestionVOS = BeanUtil
+                .copyToList(questionPage.getRecords(), ManageQuestionVO.class);
+
+        // 批量处理题库名称查询
+        if (!manageQuestionVOS.isEmpty()) {
+            List<Long> questionIds = manageQuestionVOS.stream()
+                    .map(ManageQuestionVO::getId)
+                    .collect(Collectors.toList());
+
+            // 批量查询bankId
+            QueryWrapper<BankQuestion> bankQuestionQueryWrapper = new QueryWrapper<>();
+            bankQuestionQueryWrapper.in("questionId", questionIds);
+            List<BankQuestion> bankQuestions = bankQuestionMapper.selectList(bankQuestionQueryWrapper);
+            Map<Long, List<Long>> questionToBankIds = bankQuestions.stream()
+                    .collect(Collectors.groupingBy(BankQuestion::getQuestionId,
+                            Collectors.mapping(BankQuestion::getBankId, Collectors.toList())));
+
+            // 批量查询bankTitle
+            Set<Long> uniqueBankIds = bankQuestions.stream()
+                    .map(BankQuestion::getBankId)
+                    .collect(Collectors.toSet());
+            Map<Long, String> bankIdToTitle;
+            if (!uniqueBankIds.isEmpty()) {
+                List<Bank> banks = bankMapper.selectBatchIds(uniqueBankIds);
+                bankIdToTitle = banks.stream()
+                        .collect(Collectors.toMap(Bank::getId, Bank::getTitle));
+            } else {
+                bankIdToTitle = new HashMap<>();
+            }
+
+            // 设置bankTitle
+            manageQuestionVOS.forEach(vo -> {
+                List<Long> voBankIds = questionToBankIds.getOrDefault(vo.getId(), Collections.emptyList());
+                List<String> titles = voBankIds.stream()
+                        .map(bankIdToTitle::get)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+                vo.setBankTitle(titles);
+            });
+        }
+
+        // 构建分页结果
+        Page<ManageQuestionVO> resultPage = new Page<>();
+        resultPage.setRecords(manageQuestionVOS);
+        resultPage.setTotal(questionPage.getTotal());
+        resultPage.setCurrent(questionPage.getCurrent());
+        resultPage.setSize(questionPage.getSize());
+        resultPage.setPages(questionPage.getPages());
+
+        return resultPage;
+    }
+
+    @Override
     public QuestionVO getQuestionVO(Question question, HttpServletRequest request) {
         QuestionVO questionVO = QuestionVO.objToVo(question);
         // 1. 关联查询用户信息
@@ -140,7 +225,8 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
     @Override
     public Page<QuestionVO> getQuestionVOPage(Page<Question> questionPage, HttpServletRequest request) {
         List<Question> questionList = questionPage.getRecords();
-        Page<QuestionVO> questionVOPage = new Page<>(questionPage.getCurrent(), questionPage.getSize(), questionPage.getTotal());
+        Page<QuestionVO> questionVOPage = new Page<>(questionPage.getCurrent(), questionPage.getSize(),
+                questionPage.getTotal());
         if (CollectionUtils.isEmpty(questionList)) {
             return questionVOPage;
         }

@@ -11,7 +11,7 @@ import java.util.List;
  * 题目（包含题库信息）
  */
 @Data
-public class QuestionBankVO implements Serializable {
+public class ManageQuestionVO implements Serializable {
     /**
      * id
      */
@@ -28,14 +28,19 @@ public class QuestionBankVO implements Serializable {
     private String content;
 
     /**
-     * 所属题库
+     * 所属题库标题
      */
-    private List<Long> bankIds;
+    private List<String> bankTitle;
 
     /**
      * 标签列表（json 数组）
      */
     private String tags;
+
+    /**
+     * 难度（0-简单；1-中等；2-困难）
+     */
+    private Integer difficulty;
 
     /**
      * 题目答案

@@ -3,10 +3,14 @@ package com.itgr.zhaojbackendquestionservice.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.itgr.zhaojbackendcommon.constant.CommonConstant;
+import com.itgr.zhaojbackendcommon.utils.SqlUtils;
+import com.itgr.zhaojbackendmodel.model.dto.bank.BankQueryRequest;
 import com.itgr.zhaojbackendmodel.model.entity.Bank;
 import com.itgr.zhaojbackendmodel.model.vo.BankVO;
 import com.itgr.zhaojbackendquestionservice.service.BankService;
 import com.itgr.zhaojbackendrankingservice.mapper.BankMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -45,10 +49,20 @@ public class BankServiceImpl extends ServiceImpl<BankMapper, Bank>
     }
 
     @Override
-    public void updateBankQuestionNum(List<Long> bankIds) {
-        for (Long bankId : bankIds) {
+    public QueryWrapper<Bank> getQueryWrapper(BankQueryRequest bankQueryRequest) {
+        QueryWrapper<Bank> queryWrapper = new QueryWrapper<>();
+        if (bankQueryRequest == null) return queryWrapper;
 
-        }
+        String title = bankQueryRequest.getTitle();
+        String sortField = bankQueryRequest.getSortField();
+        String sortOrder = bankQueryRequest.getSortOrder();
+
+        // 拼接查询条件
+        queryWrapper.like(StringUtils.isNotBlank(title), "title", title);
+        queryWrapper.eq("isDelete", false);
+        queryWrapper.orderBy(SqlUtils.validSortField(sortField), sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
+                sortField);
+        return queryWrapper;
     }
 }
 

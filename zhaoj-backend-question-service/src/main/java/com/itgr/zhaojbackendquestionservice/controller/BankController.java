@@ -2,6 +2,7 @@ package com.itgr.zhaojbackendquestionservice.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itgr.zhaojbackendcommon.annotation.AuthCheck;
 import com.itgr.zhaojbackendcommon.common.BaseResponse;
 import com.itgr.zhaojbackendcommon.common.ErrorCode;
@@ -9,6 +10,7 @@ import com.itgr.zhaojbackendcommon.common.ResultUtils;
 import com.itgr.zhaojbackendcommon.constant.UserConstant;
 import com.itgr.zhaojbackendcommon.exception.ThrowUtils;
 import com.itgr.zhaojbackendmodel.model.dto.bank.BankAddRequest;
+import com.itgr.zhaojbackendmodel.model.dto.bank.BankQueryRequest;
 import com.itgr.zhaojbackendmodel.model.dto.bank.BankUpdateRequest;
 import com.itgr.zhaojbackendmodel.model.entity.Bank;
 import com.itgr.zhaojbackendmodel.model.entity.User;
@@ -122,5 +124,23 @@ public class BankController {
     @GetMapping("/get/all")
     public BaseResponse<List<BankVO>> getBankAll() {
         return ResultUtils.success(bankService.getBankAll());
+    }
+
+    /**
+     * 分页获取题库列表（仅管理员）
+     *
+     * @param bankQueryRequest 分页请求
+     * @param request          request
+     * @return 题库列表
+     */
+    @PostMapping("/list/page")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Page<Bank>> listBankByPage(@RequestBody BankQueryRequest bankQueryRequest,
+                                                       HttpServletRequest request) {
+        long current = bankQueryRequest.getCurrent();
+        long size = bankQueryRequest.getPageSize();
+        Page<Bank> bankPage = bankService.page(new Page<>(current, size),
+                bankService.getQueryWrapper(bankQueryRequest));
+        return ResultUtils.success(bankPage);
     }
 }
