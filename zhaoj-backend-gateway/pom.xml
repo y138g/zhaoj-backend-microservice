@@ -12,7 +12,7 @@
     <name>zhaoj-backend-gateway</name>
     <description>zhaoj-backend-gateway</description>
     <properties>
-        <java.version>8</java.version>
+        <java.version>1.8</java.version>
         <spring-cloud.version>2021.0.8</spring-cloud.version>
     </properties>
     <dependencies>
@@ -83,6 +83,14 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
             </plugin>
         </plugins>
     </build>

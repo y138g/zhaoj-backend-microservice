@@ -12,7 +12,7 @@
     <name>zhaoj-backend-file-service</name>
     <description>zhaoj-backend-file-service</description>
     <properties>
-        <java.version>8</java.version>
+        <java.version>1.8</java.version>
     </properties>
     <dependencies>
         <!--  oss  -->
