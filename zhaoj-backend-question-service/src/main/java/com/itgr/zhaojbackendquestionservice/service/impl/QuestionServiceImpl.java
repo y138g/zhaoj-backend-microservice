@@ -20,7 +20,7 @@ import com.itgr.zhaojbackendmodel.model.vo.UserVO;
 import com.itgr.zhaojbackendquestionservice.mapper.BankQuestionMapper;
 import com.itgr.zhaojbackendquestionservice.mapper.QuestionMapper;
 import com.itgr.zhaojbackendquestionservice.service.QuestionService;
-import com.itgr.zhaojbackendrankingservice.mapper.BankMapper;
+import com.itgr.zhaojbackendquestionservice.mapper.BankMapper;
 import com.itgr.zhaojbackendserviceclient.service.UserFeignClient;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;

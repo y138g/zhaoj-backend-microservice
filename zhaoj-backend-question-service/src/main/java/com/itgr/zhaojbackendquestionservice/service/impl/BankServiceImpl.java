@@ -9,7 +9,7 @@ import com.itgr.zhaojbackendmodel.model.dto.bank.BankQueryRequest;
 import com.itgr.zhaojbackendmodel.model.entity.Bank;
 import com.itgr.zhaojbackendmodel.model.vo.BankVO;
 import com.itgr.zhaojbackendquestionservice.service.BankService;
-import com.itgr.zhaojbackendrankingservice.mapper.BankMapper;
+import com.itgr.zhaojbackendquestionservice.mapper.BankMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 

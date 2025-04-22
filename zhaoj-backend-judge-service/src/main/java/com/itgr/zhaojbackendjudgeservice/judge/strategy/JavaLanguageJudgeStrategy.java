@@ -42,7 +42,8 @@ public class JavaLanguageJudgeStrategy implements JudgeStrategy {
         }
         for (int i = 0; i < judgeCaseList.size(); i++) {
             JudgeCase judgeCase = judgeCaseList.get(i);
-            if (judgeCase.getOutput().equals(outputList.get(i))) {
+            String output = outputList.get(i);
+            if (judgeCase.getOutput().equals(output) || output == null) {
                 judgeInfoMessageEnum = JudgeInfoMessageEnum.WRONG_ANSWER;
                 judgeInfoResponse.setMessage(judgeInfoMessageEnum.getValue());
                 return judgeInfoResponse;

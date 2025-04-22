@@ -12,8 +12,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@MapperScan(basePackages = {"com.itgr.zhaojbackendquestionservice.mapper",
-        "com.itgr.zhaojbackendrankingservice.mapper"})
+@MapperScan(basePackages = {"com.itgr.zhaojbackendquestionservice.mapper"})
 @EnableScheduling
 @EnableAspectJAutoProxy(proxyTargetClass = true, exposeProxy = true)
 @ComponentScan(basePackages = "com.itgr",

@@ -14,7 +14,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class RemoteCodeSandbox implements CodeSandbox {
 
-    private final String boxUrl = "http://localhost:8134/executeCode";
+    private final String boxUrl = "http://101.126.19.192:8134/executeCode";
 
     // 定义鉴权请求头和密钥
     private static final String AUTH_REQUEST_HEADER = "auth";

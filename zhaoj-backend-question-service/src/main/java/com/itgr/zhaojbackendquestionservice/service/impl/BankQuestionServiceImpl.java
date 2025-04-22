@@ -7,7 +7,7 @@ import com.itgr.zhaojbackendmodel.model.entity.Bank;
 import com.itgr.zhaojbackendmodel.model.entity.BankQuestion;
 import com.itgr.zhaojbackendquestionservice.mapper.BankQuestionMapper;
 import com.itgr.zhaojbackendquestionservice.service.BankQuestionService;
-import com.itgr.zhaojbackendrankingservice.mapper.BankMapper;
+import com.itgr.zhaojbackendquestionservice.mapper.BankMapper;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
